@@ -1,5 +1,7 @@
 import os
+import sys
 from flask import Flask, request, jsonify
+from pyspark.sql import SparkSession
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import SparkSession
 from pyspark.ml.clustering import KMeans
@@ -25,14 +27,12 @@ def get_uber_data():
 	transformed.createOrReplaceTempView("data_table")
 	transformed.cache()
 	centerList=list()
-	cluster_centers = model.clusterCenters()
+	centers1 = model.clusterCenters()
 	count=int()
-	for center in cluster_centers:
-		centersIndList=list()
-		centersIndList.append(format(center[0], '.8f'))
-		centersIndList.append(format(center[1], '.8f'))
-		centersIndList.append(count)
-		centerList.append(centersIndList)
+	for center in centers1:
+		temp_list=center.tolist()
+		temp_list.append(count)
+		centerList.append(temp_list)
 		count=count+1		
 	centers=spark.createDataFrame(centerList)
 	centers.createOrReplaceTempView("centers")
@@ -41,10 +41,10 @@ def get_uber_data():
 	return jsonify(data.toJSON().collect())
 	
 def get_port():
-	port = os.getenv("PORT")
-	if type(port) == str:
-		return port
-	return 8080	
+    port = os.getenv("PORT")
+    if type(port) == str:
+        return port
+    return 8080	
 	
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=get_port())
+    app.run(host="0.0.0.0", port=get_port())
